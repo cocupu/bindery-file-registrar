@@ -2,14 +2,14 @@ var fs = require('fs')
 var sha1 = require('sha1');
 var level = require('level')
 
-module.exports = FileRegistryTool
+module.exports = FileRegistrar
 
-function FileRegistryTool (opts) {
+function FileRegistrar (opts) {
   if (!opts) opts = {}
   this.db = opts.db || level('data.db')
 }
 
-FileRegistryTool.prototype.register = function (dir, done) {
+FileRegistrar.prototype.register = function (dir, done) {
   walk(dir, this.db, done)
 }
 
@@ -19,7 +19,7 @@ FileRegistryTool.prototype.register = function (dir, done) {
 //  .pipe(entityToObject)
 //  .pipe(concatStream);
 // ... but I couldn't figure out how to get that to work. - MZ May 2016
-FileRegistryTool.prototype.export = function (opts, callback) {
+FileRegistrar.prototype.export = function (opts, callback) {
   if (!opts) opts = {}
   var jsonBody = {}
   this.db.createReadStream()

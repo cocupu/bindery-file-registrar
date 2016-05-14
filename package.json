@@ -1,5 +1,5 @@
 {
-  "name": "bindery-file-registry",
+  "name": "bindery-file-registrar",
   "version": "0.0.1",
   "description": "Keep track of all the files that matter to you.",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cocupu/file-registry-tool.git"
+    "url": "git+https://github.com/cocupu/file-registrar.git"
   },
   "author": "Matt Zumwalt",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/cocupu/file-registry-tool/issues"
+    "url": "https://github.com/cocupu/file-registrar/issues"
   },
-  "homepage": "https://github.com/cocupu/file-registry-tool#readme",
+  "homepage": "https://github.com/cocupu/file-registrar#readme",
   "dependencies": {
     "level": "^1.4.0",
     "sha1": "^1.1.1"
