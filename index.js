@@ -70,28 +70,36 @@ var walk = function (dir, db, emitter, done) {
       }
       file = dir + '/' + file;
       fs.stat(file, function(err, stat) {
-        var entryKey = stat.dev + ":" + file
-        if (stat && stat.isDirectory()) {
-          var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
-          db.put(entryKey, JSON.stringify(entryInfo), function (err) {
-            if (err) return console.log('Ooops!', err)
-            emitter.emit('directoryRegistered', entryKey)
-          })
-          // Capture and re-emit fileRegistered and directoryRegistered events from recursive passes
-          innerEmitter = new EventEmitter()
-          .on('fileRegistered', function (entryKey) { emitter.emit('fileRegistered', entryKey) })
-          .on('directoryRegistered', function (entryKey) { emitter.emit('directoryRegistered', entryKey) })
-          walk(file, db, innerEmitter, function(err, res) {
-            next();
-          });
+        if (err) {
+          console.log(err)
+          emitter.emit('bad-file', file, err)
+          next()
         } else {
-          var checksum = sha1(fs.readFileSync(file));
-          var entryInfo = {type: 'file', size: stat.size, checksum: checksum, checksumType: 'sha1', mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev}
-          db.put(entryKey, JSON.stringify(entryInfo), function (err) {
-            if (err) return console.log('Ooops!', err)
-            emitter.emit('fileRegistered', entryKey)
-          })
-          next();
+          var entryKey = stat.dev + ":" + file
+          if (stat && stat.isDirectory()) {
+            var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
+            db.put(entryKey, JSON.stringify(entryInfo), function (err) {
+              if (err) return console.log('Ooops!', err)
+              emitter.emit('directoryRegistered', entryKey)
+            })
+            // Capture and re-emit fileRegistered and directoryRegistered events from recursive passes
+            innerEmitter = new EventEmitter()
+            .on('fileRegistered', function (entryKey) { emitter.emit('fileRegistered', entryKey) })
+            .on('directoryRegistered', function (entryKey) { emitter.emit('directoryRegistered', entryKey) })
+            walk(file, db, innerEmitter, function(err, res) {
+              next();
+            });
+          } else {
+            var entryInfo = {type: 'file', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev}
+            // var checksum = sha1(fs.readFileSync(file));
+            // entryInfo.checksum = checksum
+            // entryInfo.checksumType = 'sha1'
+            db.put(entryKey, JSON.stringify(entryInfo), function (err) {
+              if (err) return console.log('Ooops!', err)
+              emitter.emit('fileRegistered', entryKey)
+            })
+            next();
+          }
         }
       });
     })();

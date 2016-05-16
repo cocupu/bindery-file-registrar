@@ -2,6 +2,7 @@
   "name": "bindery-file-registrar",
   "version": "0.0.1",
   "description": "Keep track of all the files that matter to you.",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.js"
