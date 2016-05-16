@@ -8,18 +8,9 @@ test('emits events', function (t) {
   var deviceId = fs.statSync("/").dev
   var db = MemDB()
   var bfr = freshTool({db: db})
-  var eventCounts = {fileRegistered: 0, directoryRegistered: 0, done: 0}
-  // start, fileRegistered, directoryRegistered, end
-  bfr.register(__dirname + "/data", function(err, results) {
-    // Wait a moment to let the final event to trigger
-    setTimeout(function(){
-      t.same(eventCounts.fileRegistered, 2, "calls fileRegistered event 2 times")
-    }, 10);
-    // BUG: this should be twiggered twice, not 3 times but subdirectories get registered twice
-    // TODO: DRY out the walk function.
-    t.same(eventCounts.directoryRegistered, 3, "calls directoryRegistered event 2 times")
-    t.same(eventCounts.done, 1, "calls done event once")
-    t.end()
+  var eventCounts = {start: 0, fileRegistered: 0, directoryRegistered: 0, done: 0}
+  bfr.eventEmitter.on('start', function (dir) {
+    eventCounts.start++
   })
   .on('fileRegistered', function (entryKey) {
     eventCounts.fileRegistered++
@@ -31,6 +22,19 @@ test('emits events', function (t) {
   })
   .on('done', function (dir) {
     eventCounts.done++
+  })
+  // start, fileRegistered, directoryRegistered, end
+  bfr.register(__dirname + "/data", function(err, results) {
+    t.same(eventCounts.start, 1, "calls start event once")
+    // Wait a moment to let the final event to trigger
+    setTimeout(function(){
+      t.same(eventCounts.fileRegistered, 2, "calls fileRegistered event 2 times")
+    }, 10);
+    // BUG: this should be twiggered twice, not 3 times but subdirectories get registered twice
+    // TODO: DRY out the walk function.
+    t.same(eventCounts.directoryRegistered, 3, "calls directoryRegistered event 2 times")
+    t.same(eventCounts.done, 1, "calls done event once")
+    t.end()
   })
 })
 

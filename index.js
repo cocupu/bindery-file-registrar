@@ -8,10 +8,11 @@ module.exports = FileRegistrar
 function FileRegistrar (opts) {
   if (!opts) opts = {}
   this.db = opts.db || level('data.db')
+  this.eventEmitter = new EventEmitter()
 }
 
 FileRegistrar.prototype.register = function (dir, done) {
-  return walk(dir, this.db, undefined, done)
+  return walk(dir, this.db, this.eventEmitter, done)
 }
 
 // Note: In theory, this could be done with a pipeline like:
@@ -47,8 +48,8 @@ function shouldIncludeEntry(key, opts) {
 }
 
 var walk = function (dir, db, emitter, done) {
-  if (typeof emitter == 'undefined') emitter = new EventEmitter()
   var results = {};
+  emitter.emit('start', dir)
   // include the current dir in the registry
   fs.stat(dir, function(err, stat) {
     var entryKey = stat.dev + ":" + dir
