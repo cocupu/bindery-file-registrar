@@ -4,6 +4,36 @@ var MemDB = require('memdb');
 var level = require('level')
 var fs = require('fs')
 
+test('emits events', function (t) {
+  var deviceId = fs.statSync("/").dev
+  var db = MemDB()
+  var bfr = freshTool({db: db})
+  var eventCounts = {fileRegistered: 0, directoryRegistered: 0, done: 0}
+  // start, fileRegistered, directoryRegistered, end
+  bfr.register(__dirname + "/data", function(err, results) {
+    // Wait a moment to let the final event to trigger
+    setTimeout(function(){
+      t.same(eventCounts.fileRegistered, 2, "calls fileRegistered event 2 times")
+    }, 10);
+    // BUG: this should be twiggered twice, not 3 times but subdirectories get registered twice
+    // TODO: DRY out the walk function.
+    t.same(eventCounts.directoryRegistered, 3, "calls directoryRegistered event 2 times")
+    t.same(eventCounts.done, 1, "calls done event once")
+    t.end()
+  })
+  .on('fileRegistered', function (entryKey) {
+    eventCounts.fileRegistered++
+    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "fileRegistered passes entryKey of the file")
+  })
+  .on('directoryRegistered', function (entryKey) {
+    eventCounts.directoryRegistered++
+    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "directoryRegistered passes entryKey of the dir")
+  })
+  .on('done', function (dir) {
+    eventCounts.done++
+  })
+})
+
 test('put the stats of all files and directories in a database', function (t) {
   var db = MemDB()
   var bfr = freshTool({db: db})

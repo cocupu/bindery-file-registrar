@@ -1,6 +1,7 @@
 var fs = require('fs')
 var sha1 = require('sha1');
 var level = require('level')
+const EventEmitter = require('events');
 
 module.exports = FileRegistrar
 
@@ -10,7 +11,7 @@ function FileRegistrar (opts) {
 }
 
 FileRegistrar.prototype.register = function (dir, done) {
-  walk(dir, this.db, done)
+  return walk(dir, this.db, undefined, done)
 }
 
 // Note: In theory, this could be done with a pipeline like:
@@ -45,7 +46,8 @@ function shouldIncludeEntry(key, opts) {
   return true
 }
 
-var walk = function(dir, db, done) {
+var walk = function (dir, db, emitter, done) {
+  if (typeof emitter == 'undefined') emitter = new EventEmitter()
   var results = {};
   // include the current dir in the registry
   fs.stat(dir, function(err, stat) {
@@ -53,6 +55,7 @@ var walk = function(dir, db, done) {
     var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: dir, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(dir)}
     db.put(entryKey, JSON.stringify(entryInfo), function (err) {
       if (err) return console.log('Ooops!', err)
+      emitter.emit('directoryRegistered', entryKey)
     })
   })
   fs.readdir(dir, function(err, list) {
@@ -60,7 +63,10 @@ var walk = function(dir, db, done) {
     var i = 0;
     (function next() {
       var file = list[i++];
-      if (!file) return done(null, results);
+      if (!file) {
+        emitter.emit('done', dir)
+        return done(null, results)
+      }
       file = dir + '/' + file;
       fs.stat(file, function(err, stat) {
         var entryKey = stat.dev + ":" + file
@@ -68,8 +74,13 @@ var walk = function(dir, db, done) {
           var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
           db.put(entryKey, JSON.stringify(entryInfo), function (err) {
             if (err) return console.log('Ooops!', err)
+            emitter.emit('directoryRegistered', entryKey)
           })
-          walk(file, db, function(err, res) {
+          // Capture and re-emit fileRegistered and directoryRegistered events from recursive passes
+          innerEmitter = new EventEmitter()
+          .on('fileRegistered', function (entryKey) { emitter.emit('fileRegistered', entryKey) })
+          .on('directoryRegistered', function (entryKey) { emitter.emit('directoryRegistered', entryKey) })
+          walk(file, db, innerEmitter, function(err, res) {
             next();
           });
         } else {
@@ -77,10 +88,12 @@ var walk = function(dir, db, done) {
           var entryInfo = {type: 'file', size: stat.size, checksum: checksum, checksumType: 'sha1', mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev}
           db.put(entryKey, JSON.stringify(entryInfo), function (err) {
             if (err) return console.log('Ooops!', err)
+            emitter.emit('fileRegistered', entryKey)
           })
           next();
         }
       });
     })();
   });
+  return emitter
 };
