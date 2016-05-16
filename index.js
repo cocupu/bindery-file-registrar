@@ -29,7 +29,7 @@ FileRegistrar.prototype.export = function (opts, callback) {
       var device = dbKey.substr(0,dbKey.indexOf(':'))
       var localKey = dbKey.substr(dbKey.indexOf(':')+1);
       if (!jsonBody[device]) jsonBody[device]  = {}
-      jsonBody[device][localKey] = data.value
+      jsonBody[device][localKey] = JSON.parse(data.value)
     }
   })
   .on('error', function (err) {
@@ -50,7 +50,7 @@ var walk = function(dir, db, done) {
   // include the current dir in the registry
   fs.stat(dir, function(err, stat) {
     var entryKey = stat.dev + ":" + dir
-    var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, children:fs.readdirSync(dir)}
+    var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: dir, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(dir)}
     db.put(entryKey, JSON.stringify(entryInfo), function (err) {
       if (err) return console.log('Ooops!', err)
     })
@@ -65,7 +65,7 @@ var walk = function(dir, db, done) {
       fs.stat(file, function(err, stat) {
         var entryKey = stat.dev + ":" + file
         if (stat && stat.isDirectory()) {
-          var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, children:fs.readdirSync(file)}
+          var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
           db.put(entryKey, JSON.stringify(entryInfo), function (err) {
             if (err) return console.log('Ooops!', err)
           })
@@ -74,7 +74,7 @@ var walk = function(dir, db, done) {
           });
         } else {
           var checksum = sha1(fs.readFileSync(file));
-          var entryInfo = {type: 'file', size: stat.size, checksum: checksum, checksumType: 'sha1', mtime: stat.mtime, birthtime: stat.birthtime}
+          var entryInfo = {type: 'file', size: stat.size, checksum: checksum, checksumType: 'sha1', mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev}
           db.put(entryKey, JSON.stringify(entryInfo), function (err) {
             if (err) return console.log('Ooops!', err)
           })

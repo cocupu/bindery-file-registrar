@@ -1,6 +1,7 @@
 var test = require('tape')
 var FileRegistryTool = require('../')
 var MemDB = require('memdb');
+var level = require('level')
 var fs = require('fs')
 
 test('put the stats of all files and directories in a database', function (t) {
@@ -12,12 +13,31 @@ test('put the stats of all files and directories in a database', function (t) {
     if (err) throw err;
     bfr.export({}, function (json) {
       t.same(Object.keys(json), [deviceId.toString()], "nests entries by device id")
-      var expectedEntries = {}
-      expectedEntries[__dirname + '/data'] = '{"type":"dir","size":136,"mtime":"2016-05-12T20:08:51.000Z","birthtime":"2016-05-12T19:23:09.000Z","children":["sample.txt","subdir"]}'
-      expectedEntries[__dirname + '/data/sample.txt'] = '{"type":"file","size":28,"checksum":"69c6390b26de19f8c4f6eb387360bb250467f1b5","checksumType":"sha1","mtime":"2016-05-12T21:05:14.000Z","birthtime":"2016-05-12T19:37:42.000Z"}',
-      expectedEntries[__dirname + '/data/subdir'] = '{"type":"dir","size":102,"mtime":"2016-05-12T20:09:26.000Z","birthtime":"2016-05-12T20:08:51.000Z","children":["hells angels kissing - hunter thompson.jpg"]}',
-      expectedEntries[__dirname + '/data/subdir/hells angels kissing - hunter thompson.jpg'] = '{"type":"file","size":135186,"checksum":"a50b82dd0aaa2536a68b231cb775faec82a0ed9c","checksumType":"sha1","mtime":"2011-12-17T05:11:36.000Z","birthtime":"2011-12-17T05:11:36.000Z"}'
-      t.same(json[deviceId], expectedEntries, "stores data about all directories and files")
+      t.same(Object.keys(json[deviceId]).length, 4)
+      var dataDirEntry = json[deviceId][__dirname + '/data']
+      t.same(dataDirEntry.path, __dirname + '/data')
+      t.same(dataDirEntry.size, 136)
+      t.same(dataDirEntry.birthtime, '2016-05-12T19:23:09.000Z')
+      t.same(dataDirEntry.mtime, '2016-05-12T20:08:51.000Z')
+      t.same(dataDirEntry.children, [ 'sample.txt', 'subdir' ])
+      t.same(dataDirEntry.type, 'dir')
+
+      var fileEntry = json[deviceId][__dirname + '/data/sample.txt']
+      t.same(fileEntry.path, __dirname + '/data/sample.txt')
+      t.same(fileEntry.size, 28)
+      t.same(fileEntry.birthtime, '2016-05-12T19:37:42.000Z')
+      t.same(fileEntry.mtime, '2016-05-12T21:05:14.000Z')
+      t.same(fileEntry.children, undefined)
+      t.same(fileEntry.type, 'file')
+
+      var subDirEntry = json[deviceId][__dirname + '/data/subdir']
+      t.same(subDirEntry.path, __dirname + '/data/subdir')
+      t.same(subDirEntry.size, 102)
+      t.same(subDirEntry.birthtime, '2016-05-12T20:08:51.000Z')
+      t.same(subDirEntry.mtime, '2016-05-12T20:09:26.000Z')
+      t.same(subDirEntry.children, ["hells angels kissing - hunter thompson.jpg"])
+      t.same(subDirEntry.type, 'dir')
+
       t.end()
     })
 
