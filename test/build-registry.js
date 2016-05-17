@@ -61,7 +61,7 @@ test('put the stats of all files and directories in a database', function (t) {
     if (err) throw err;
     bfr.export({}, function (json) {
       t.same(Object.keys(json), [deviceId.toString()], "nests entries by device id")
-      t.same(Object.keys(json[deviceId]).length, 5)
+      t.same(Object.keys(json[deviceId]).length, 5, "registers the expected amount of files")
       var dataDirEntry = json[deviceId][__dirname + '/data']
       t.same(dataDirEntry.path, __dirname + '/data', "stores path")
       t.same(dataDirEntry.size, 136, "stores size")
