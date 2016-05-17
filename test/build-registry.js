@@ -18,6 +18,7 @@ test('emits events', function (t) {
   })
   .on('directoryRegistered', function (entryKey) {
     eventCounts.directoryRegistered++
+    console.log("directoryRegistered "+ entryKey)
     t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "directoryRegistered passes entryKey of the dir")
   })
   .on('done', function (dir) {
@@ -25,15 +26,28 @@ test('emits events', function (t) {
   })
   // start, fileRegistered, directoryRegistered, end
   bfr.register(__dirname + "/data", function(err, results) {
-    t.same(eventCounts.start, 1, "calls start event once")
+    t.same(eventCounts.start, 1, "emits start event once")
     // Wait a moment to let the final event to trigger
     setTimeout(function(){
-      t.same(eventCounts.fileRegistered, 2, "calls fileRegistered event 2 times")
+      t.same(eventCounts.fileRegistered, 2, "emits fileRegistered event 2 times")
     }, 10);
-    // BUG: this should be twiggered twice, not 3 times but subdirectories get registered twice
-    // TODO: DRY out the walk function.
-    t.same(eventCounts.directoryRegistered, 3, "calls directoryRegistered event 2 times")
-    t.same(eventCounts.done, 1, "calls done event once")
+    setTimeout(function(){
+      t.same(eventCounts.directoryRegistered, 2, "emits directoryRegistered event 2 times")
+    }, 10);
+    t.same(eventCounts.done, 1, "emits done event once")
+    t.end()
+  })
+})
+
+test('handles unreadable directories', function (t) {
+  var dir = __dirname + "/data/unreadable-dir";
+  var db = MemDB()
+  var bfr = freshTool({db: db})
+  if (!fs.existsSync(dir)){
+      fs.mkdirSync(dir, 0222);
+  }
+  bfr.register(dir, function(err, results) {
+    fs.rmdirSync(dir)
     t.end()
   })
 })
@@ -49,28 +63,27 @@ test('put the stats of all files and directories in a database', function (t) {
       t.same(Object.keys(json), [deviceId.toString()], "nests entries by device id")
       t.same(Object.keys(json[deviceId]).length, 4)
       var dataDirEntry = json[deviceId][__dirname + '/data']
-      t.same(dataDirEntry.path, __dirname + '/data')
-      t.same(dataDirEntry.size, 136)
-      t.same(dataDirEntry.birthtime, '2016-05-12T19:23:09.000Z')
-      t.same(dataDirEntry.mtime, '2016-05-12T20:08:51.000Z')
-      t.same(dataDirEntry.children, [ 'sample.txt', 'subdir' ])
-      t.same(dataDirEntry.type, 'dir')
+      t.same(dataDirEntry.path, __dirname + '/data', "stores path")
+      t.same(dataDirEntry.size, 136, "stores size")
+      t.same(dataDirEntry.birthtime, '2016-05-12T19:23:09.000Z', "stores birthtime")
+      t.same(dataDirEntry.children, [ 'sample.txt', 'subdir' ], "stores children (if dir)")
+      t.same(dataDirEntry.type, 'dir', "stores type (dir)")
 
       var fileEntry = json[deviceId][__dirname + '/data/sample.txt']
-      t.same(fileEntry.path, __dirname + '/data/sample.txt')
-      t.same(fileEntry.size, 28)
-      t.same(fileEntry.birthtime, '2016-05-12T19:37:42.000Z')
-      t.same(fileEntry.mtime, '2016-05-12T21:05:14.000Z')
-      t.same(fileEntry.children, undefined)
-      t.same(fileEntry.type, 'file')
+      t.same(fileEntry.path, __dirname + '/data/sample.txt', "stores path")
+      t.same(fileEntry.size, 28, "stores size")
+      t.same(fileEntry.birthtime, '2016-05-12T19:37:42.000Z', "stores birthtime")
+      t.same(fileEntry.mtime, '2016-05-12T21:05:14.000Z', "stores mtime")
+      t.same(fileEntry.children, undefined, "does not store children if file")
+      t.same(fileEntry.type, 'file', "stores type (file)")
 
       var subDirEntry = json[deviceId][__dirname + '/data/subdir']
-      t.same(subDirEntry.path, __dirname + '/data/subdir')
-      t.same(subDirEntry.size, 102)
-      t.same(subDirEntry.birthtime, '2016-05-12T20:08:51.000Z')
-      t.same(subDirEntry.mtime, '2016-05-12T20:09:26.000Z')
-      t.same(subDirEntry.children, ["hells angels kissing - hunter thompson.jpg"])
-      t.same(subDirEntry.type, 'dir')
+      t.same(subDirEntry.path, __dirname + '/data/subdir', "stores path")
+      t.same(subDirEntry.size, 102, "stores size")
+      t.same(subDirEntry.birthtime, '2016-05-12T20:08:51.000Z', "stores birthtime")
+      t.same(subDirEntry.mtime, '2016-05-12T20:09:26.000Z', "stores mtime")
+      t.same(subDirEntry.children, ["hells angels kissing - hunter thompson.jpg"], "stores children")
+      t.same(subDirEntry.type, 'dir', "stores type (dir)")
 
       t.end()
     })

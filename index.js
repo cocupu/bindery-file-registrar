@@ -50,17 +50,20 @@ function shouldIncludeEntry(key, opts) {
 var walk = function (dir, db, emitter, done) {
   var results = {};
   emitter.emit('start', dir)
-  // include the current dir in the registry
-  fs.stat(dir, function(err, stat) {
-    var entryKey = stat.dev + ":" + dir
-    var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: dir, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(dir)}
-    db.put(entryKey, JSON.stringify(entryInfo), function (err) {
-      if (err) return console.log('Ooops!', err)
-      emitter.emit('directoryRegistered', entryKey)
-    })
-  })
+
   fs.readdir(dir, function(err, list) {
     if (err) return done(err);
+
+    // include the current dir in the registry
+    fs.stat(dir, function(err, stat) {
+      var entryKey = stat.dev + ":" + dir
+      var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: dir, storagePlatform: 'localFs', deviceId: stat.dev, children:list}
+      db.put(entryKey, JSON.stringify(entryInfo), function (err) {
+        if (err) return console.log('Ooops!', err)
+        emitter.emit('directoryRegistered', entryKey)
+      })
+    })
+
     var i = 0;
     (function next() {
       var file = list[i++];
@@ -77,11 +80,11 @@ var walk = function (dir, db, emitter, done) {
         } else {
           var entryKey = stat.dev + ":" + file
           if (stat && stat.isDirectory()) {
-            var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
-            db.put(entryKey, JSON.stringify(entryInfo), function (err) {
-              if (err) return console.log('Ooops!', err)
-              emitter.emit('directoryRegistered', entryKey)
-            })
+            // var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
+            // db.put(entryKey, JSON.stringify(entryInfo), function (err) {
+            //   if (err) return console.log('Ooops!', err)
+            //   emitter.emit('directoryRegistered', entryKey)
+            // })
             // Capture and re-emit fileRegistered and directoryRegistered events from recursive passes
             innerEmitter = new EventEmitter()
             .on('fileRegistered', function (entryKey) { emitter.emit('fileRegistered', entryKey) })
