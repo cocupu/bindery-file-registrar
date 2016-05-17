@@ -29,7 +29,7 @@ test('emits events', function (t) {
     t.same(eventCounts.start, 1, "emits start event once")
     // Wait a moment to let the final event to trigger
     setTimeout(function(){
-      t.same(eventCounts.fileRegistered, 2, "emits fileRegistered event 2 times")
+      t.same(eventCounts.fileRegistered, 3, "emits fileRegistered event 2 times")
     }, 10);
     setTimeout(function(){
       t.same(eventCounts.directoryRegistered, 2, "emits directoryRegistered event 2 times")
@@ -61,7 +61,7 @@ test('put the stats of all files and directories in a database', function (t) {
     if (err) throw err;
     bfr.export({}, function (json) {
       t.same(Object.keys(json), [deviceId.toString()], "nests entries by device id")
-      t.same(Object.keys(json[deviceId]).length, 4)
+      t.same(Object.keys(json[deviceId]).length, 5)
       var dataDirEntry = json[deviceId][__dirname + '/data']
       t.same(dataDirEntry.path, __dirname + '/data', "stores path")
       t.same(dataDirEntry.size, 136, "stores size")
@@ -79,12 +79,14 @@ test('put the stats of all files and directories in a database', function (t) {
 
       var subDirEntry = json[deviceId][__dirname + '/data/subdir']
       t.same(subDirEntry.path, __dirname + '/data/subdir', "stores path")
-      t.same(subDirEntry.size, 102, "stores size")
+      t.same(subDirEntry.size, 136, "stores size")
       t.same(subDirEntry.birthtime, '2016-05-12T20:08:51.000Z', "stores birthtime")
-      t.same(subDirEntry.mtime, '2016-05-12T20:09:26.000Z', "stores mtime")
-      t.same(subDirEntry.children, ["hells angels kissing - hunter thompson.jpg"], "stores children")
+      t.same(subDirEntry.mtime, '2016-05-17T16:07:51.000Z', "stores mtime")
+      t.same(subDirEntry.children, ['FakeApplication.app', "hells angels kissing - hunter thompson.jpg"], "stores children")
       t.same(subDirEntry.type, 'dir', "stores type (dir)")
 
+      t.same(json[deviceId][__dirname + '/data/subdir/FakeApplication.app'].type, 'file', 'Registers .app directories as files')
+      t.notOk(json[deviceId][__dirname + '/data/subdir/FakeApplication.app/innerfile.txt'], 'does not register contents of .app directories')
       t.end()
     })
 

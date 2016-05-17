@@ -79,7 +79,7 @@ var walk = function (dir, db, emitter, done) {
           next()
         } else {
           var entryKey = stat.dev + ":" + file
-          if (stat && stat.isDirectory()) {
+          if (stat && stat.isDirectory() && !endsWith(file, '.app')) {
             // var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
             // db.put(entryKey, JSON.stringify(entryInfo), function (err) {
             //   if (err) return console.log('Ooops!', err)
@@ -109,3 +109,7 @@ var walk = function (dir, db, emitter, done) {
   });
   return emitter
 };
+
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
