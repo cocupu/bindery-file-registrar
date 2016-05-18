@@ -1,4 +1,5 @@
 var fs = require('fs')
+var path = require('path')
 var sha1 = require('sha1');
 var level = require('level')
 const EventEmitter = require('events');
@@ -79,12 +80,7 @@ var walk = function (dir, db, emitter, done) {
           next()
         } else {
           var entryKey = stat.dev + ":" + file
-          if (stat && stat.isDirectory() && !isBundleDir(file)) {
-            // var entryInfo = {type: 'dir', size: stat.size, mtime: stat.mtime, birthtime: stat.birthtime, path: file, storagePlatform: 'localFs', deviceId: stat.dev, children:fs.readdirSync(file)}
-            // db.put(entryKey, JSON.stringify(entryInfo), function (err) {
-            //   if (err) return console.log('Ooops!', err)
-            //   emitter.emit('directoryRegistered', entryKey)
-            // })
+          if (stat && stat.isDirectory() && !isBundleDir(file) && !isHidden(file)) {
             // Capture and re-emit fileRegistered and directoryRegistered events from recursive passes
             innerEmitter = new EventEmitter()
             .on('fileRegistered', function (entryKey) { emitter.emit('fileRegistered', entryKey) })
@@ -110,15 +106,19 @@ var walk = function (dir, db, emitter, done) {
   return emitter
 };
 
-function isBundleDir(path) {
+function isBundleDir(filepath) {
   var suffixes = [".framework",".app",".lproj",".bundle"]
   for (var i in suffixes) {
-    if (endsWith(path, suffixes[i])) {
-      return true
-    }
+    if (endsWith(filepath, suffixes[i])) { return true }
   }
   return false
 }
+function isHidden(filepath) {
+  return beginsWith(path.basename(filepath), ".")
+}
 function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+function beginsWith(str, prefix) {
+    return str.indexOf(prefix) == 0;
 }

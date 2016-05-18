@@ -18,7 +18,6 @@ test('emits events', function (t) {
   })
   .on('directoryRegistered', function (entryKey) {
     eventCounts.directoryRegistered++
-    console.log("directoryRegistered "+ entryKey)
     t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "directoryRegistered passes entryKey of the dir")
   })
   .on('done', function (dir) {
@@ -29,7 +28,7 @@ test('emits events', function (t) {
     t.same(eventCounts.start, 1, "emits start event once")
     // Wait a moment to let the final event to trigger
     setTimeout(function(){
-      t.same(eventCounts.fileRegistered, 3, "emits fileRegistered event 2 times")
+      t.same(eventCounts.fileRegistered, 4, "emits fileRegistered event 4 times")
     }, 10);
     setTimeout(function(){
       t.same(eventCounts.directoryRegistered, 2, "emits directoryRegistered event 2 times")
@@ -61,12 +60,12 @@ test('put the stats of all files and directories in a database', function (t) {
     if (err) throw err;
     bfr.export({}, function (json) {
       t.same(Object.keys(json), [deviceId.toString()], "nests entries by device id")
-      t.same(Object.keys(json[deviceId]).length, 5, "registers the expected amount of files")
+      t.same(Object.keys(json[deviceId]).length, 6, "registers the expected amount of entities")
       var dataDirEntry = json[deviceId][__dirname + '/data']
       t.same(dataDirEntry.path, __dirname + '/data', "stores path")
-      t.same(dataDirEntry.size, 136, "stores size")
+      t.same(dataDirEntry.size, 170, "stores size")
       t.same(dataDirEntry.birthtime, '2016-05-12T19:23:09.000Z', "stores birthtime")
-      t.same(dataDirEntry.children, [ 'sample.txt', 'subdir' ], "stores children (if dir)")
+      t.same(dataDirEntry.children, [ '.hidden', 'sample.txt', 'subdir' ], "stores children (if dir)")
       t.same(dataDirEntry.type, 'dir', "stores type (dir)")
 
       var fileEntry = json[deviceId][__dirname + '/data/sample.txt']
@@ -87,6 +86,8 @@ test('put the stats of all files and directories in a database', function (t) {
 
       t.same(json[deviceId][__dirname + '/data/subdir/FakeApplication.app'].type, 'file', 'Registers .app directories as files')
       t.notOk(json[deviceId][__dirname + '/data/subdir/FakeApplication.app/innerfile.txt'], 'does not register contents of .app directories')
+      t.same(json[deviceId][__dirname + '/data/.hidden'].type, 'file', 'Registers hidden directories as files')
+
       t.end()
     })
 
