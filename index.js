@@ -107,7 +107,7 @@ var walk = function (dir, db, emitter, done) {
 };
 
 function isBundleDir(filepath) {
-  var suffixes = [".framework",".app",".lproj",".bundle"]
+  var suffixes = [".framework",".app",".lproj",".bundle",".mbox",".noindex",".photoslibrary",".migratedphotolibrary",".db",".ofocus-backup"]
   for (var i in suffixes) {
     if (endsWith(filepath, suffixes[i])) { return true }
   }
