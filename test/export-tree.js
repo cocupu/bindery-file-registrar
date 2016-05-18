@@ -1,5 +1,7 @@
-var test = require('tape')
-var helper = require('./test-helper')
+const test = require('tape')
+const helper = require('./test-helper')
+const fs = require('fs')
+const path = require('path')
 
 test('export tree', function (t) {
   var bfr = helper.freshRegistry()
@@ -17,5 +19,22 @@ test('export tree', function (t) {
       t.same(fakeApplication.id, subdir.id+"/FakeApplication.app", "recursively adds sub-children")
     })
     t.end()
+  })
+})
+
+test('export to json file', function (t) {
+  var bfr = helper.freshRegistry()
+  var rootPath = __dirname + "/data"
+  var exportPath = __dirname + "/../tmp/export.json"
+  if (!fs.existsSync(path.dirname(exportPath))){
+    fs.mkdirSync(path.dirname(exportPath));
+  }
+  bfr.register(rootPath, function(err, results) {
+    if (err) throw err;
+    bfr.exportTreeToFile(helper.entryIdFor(rootPath), exportPath, {}, function (exportJson) {
+      var fileJson = JSON.parse(fs.readFileSync(exportPath))
+      t.same(fileJson.id, exportJson.id)
+      t.end()
+    })
   })
 })

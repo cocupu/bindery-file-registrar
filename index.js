@@ -24,6 +24,10 @@ FileRegistrar.prototype.exportTree = function (rootEntry, opts, callback) {
   TreeExporter.exportTree(rootEntry, this.db, opts, callback)
 }
 
+FileRegistrar.prototype.exportTreeToFile = function (rootEntry, destinationPath, opts, callback) {
+  TreeExporter.exportTreeToFile(rootEntry, destinationPath, this.db, opts, callback)
+}
+
 FileRegistrar.prototype.exportDb = function (opts, callback) {
   TreeExporter.exportDb(this.db, opts, callback)
 }
