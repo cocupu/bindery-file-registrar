@@ -7,31 +7,38 @@ var fs = require('fs')
 test('emits events', function (t) {
   var deviceId = fs.statSync("/").dev
   var bfr = helper.freshRegistry()
-  var eventCounts = {start: 0, fileRegistered: 0, directoryRegistered: 0, done: 0}
+  var eventCounts = {start: 0, entity: 0, file: 0, directory: 0, done: 0}
   bfr.eventEmitter.on('start', function (dir) {
     eventCounts.start++
   })
-  .on('fileRegistered', function (entryKey) {
-    eventCounts.fileRegistered++
-    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "fileRegistered passes entryKey of the file")
+  .on('file-registered', function (entryKey) {
+    eventCounts.file++
+    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "file-registered passes entryKey of the file")
   })
-  .on('directoryRegistered', function (entryKey) {
-    eventCounts.directoryRegistered++
-    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "directoryRegistered passes entryKey of the dir")
+  .on('directory-registered', function (entryKey) {
+    eventCounts.directory++
+    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "directory-registered passes entryKey of the dir")
+  })
+  .on('entity-registered', function (entryKey) {
+    eventCounts.entity++
+    t.true(entryKey.indexOf(deviceId+":"+__dirname + "/data") > -1, "directory-registered passes entryKey of the dir")
   })
   .on('done', function (dir) {
     eventCounts.done++
   })
-  // start, fileRegistered, directoryRegistered, end
+  // start, file-registered, directory-registered, end
   bfr.register(__dirname + "/data", function(err, entryInfo) {
     t.same(entryInfo.path, __dirname + "/data", "passes entryInfo for the root dir into 'done()' callback")
     t.same(eventCounts.start, 1, "emits start event once")
     // Wait a moment to let the final event to trigger
     setTimeout(function(){
-      t.same(eventCounts.fileRegistered, 4, "emits fileRegistered event 4 times")
+      t.same(eventCounts.file, 4, "emits file-registered event 4 times")
     }, 10);
     setTimeout(function(){
-      t.same(eventCounts.directoryRegistered, 2, "emits directoryRegistered event 2 times")
+      t.same(eventCounts.directory, 2, "emits directory-registered event 2 times")
+    }, 10);
+    setTimeout(function(){
+      t.same(eventCounts.entity, 6, "emits entity-registered event (both dirs and files) 6 times")
     }, 10);
     t.same(eventCounts.done, 1, "emits done event once")
     t.end()
