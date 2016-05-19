@@ -23,7 +23,8 @@ test('emits events', function (t) {
     eventCounts.done++
   })
   // start, fileRegistered, directoryRegistered, end
-  bfr.register(__dirname + "/data", function(err, results) {
+  bfr.register(__dirname + "/data", function(err, entryInfo) {
+    t.same(entryInfo.path, __dirname + "/data", "passes entryInfo for the root dir into 'done()' callback")
     t.same(eventCounts.start, 1, "emits start event once")
     // Wait a moment to let the final event to trigger
     setTimeout(function(){
