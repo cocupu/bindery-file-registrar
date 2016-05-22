@@ -16,8 +16,8 @@ function FileRegistrar (opts) {
   this.eventEmitter = new EventEmitter()
 }
 
-FileRegistrar.prototype.register = function (dir, done) {
-  return FileSystemWalker.walkAndRegister(dir, this.db, this.eventEmitter, done)
+FileRegistrar.prototype.register = function (dir) {
+  return FileSystemWalker.walkAndRegister(dir, this.db, this.eventEmitter)
 }
 
 FileRegistrar.prototype.exportTree = function (rootEntry, opts, callback) {
